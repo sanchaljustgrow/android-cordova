@@ -1,0 +1,55 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+
+    - name: Install packages and build Angular
+      run: |
+        cd android-angular
+        npm install
+        npm run build
+
+    - name: Install Cordova
+      run: npm install -g cordova
+
+    - name: Cordova project setup
+      run: |
+        cordova create androidtimp com.thinkrms.timp TIMP
+        cd androidtimp
+        cordova platform add android@13.0.0
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: 17
+        distribution: temurin
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Remove default Cordova www directory
+      run: rm -rvf androidtimp/www
+
+    - name: Move Angular build to Cordova www
+      run: cp -r android-angular/dist/browser androidtimp/www
+
+    - name: Build APK
+      run: |
+        cd androidtimp
+        cordova build android
