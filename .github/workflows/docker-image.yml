@@ -28,6 +28,9 @@ jobs:
     - name: Install Cordova
       run: npm install -g cordova
 
+    - name: Clean previous Cordova project if exists
+      run: rm -rf androidtimp
+
     - name: Cordova project setup
       run: |
         cordova create androidtimp com.thinkrms.timp TIMP
