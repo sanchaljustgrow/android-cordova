@@ -47,10 +47,12 @@ jobs:
       uses: android-actions/setup-android@v3
 
     - name: Remove default Cordova www directory
-      run: rm -rvf androidtimp/www
+      run: rm -rf androidtimp/www/
 
-    - name: Move Angular build to Cordova www
-      run: cp -r android-angular/dist/browser androidtimp/www
+    - name: Copy Angular build to Cordova www
+      run: |
+        DIST_DIR=$(ls android-angular/dist)
+        cp -r android-angular/dist/$DIST_DIR androidtimp/www
 
     - name: Build APK
       run: |
