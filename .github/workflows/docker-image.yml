@@ -29,53 +29,13 @@ jobs:
         npm install
         npm run build
 
-    - name: Install Cordova
-      run: npm install -g cordova
-
-    - name: Clean previous Cordova project if exists
-      run: rm -rf androidtimp
-
-    - name: Cordova project setup
-      run: |
-        cordova create androidtimp com.thinkrms.timp TIMP
-        cd androidtimp
-        cordova platform add android@13.0.0
-
-    - name: Set up JDK 17
-      uses: actions/setup-java@v3
-      with:
-        java-version: 17
-        distribution: temurin
-
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
-    - name: Remove default Cordova www directory
-      run: rm -rf androidtimp/www/
-
-    - name: Copy Angular build to Cordova www
-      run: |
-        DIST_DIR=$(ls android-angular/dist)
-        cp -r android-angular/dist/$DIST_DIR androidtimp/www
-
-    - name: Build APK
-      run: |
-        cd androidtimp
-        cordova build android
-
    
-   
-    - name: Upload Release APK
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: v${{ github.run_number }}
-        files: /home/runner/work/android-cordova/android-cordova/androidtimp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Get version from package.json
+      id: get_version
+      run: echo "::set-output name=version::$(node -p "require('./package.json').version")"
 
-
-    
-      #uses: softprops/action-gh-release@v1
-     # if: ${{startsWith(github.ref, 'refs/tags/v1.0.0') }}
-      #with:
-       # files: /home/runner/work/android-cordova/android-cordova/androidtimp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+    - name: Check if tag exists
+      run: |
+        if git rev-parse v${{ steps.get_version.outputs.version }} >/dev/null 2>&1; then
+          echo "Tag v${{ steps.get_version.outputs.version }} already exists"
+        fi
