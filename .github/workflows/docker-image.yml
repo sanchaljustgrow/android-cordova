@@ -39,4 +39,8 @@ jobs:
         if git rev-parse v${{ steps.get_version.outputs.version }} >/dev/null 2>&1; then
           echo "Tag v${{ steps.get_version.outputs.version }} already exists"
         fi
- 
+
+    - name: Create tag
+      run: |
+        git tag -a v${{ steps.get_version.outputs.version }} -m "Version ${{ steps.get_version.outputs.version }}"
+        git push origin v${{ steps.get_version.outputs.version }}
