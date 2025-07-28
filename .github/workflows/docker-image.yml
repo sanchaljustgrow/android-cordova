@@ -6,8 +6,8 @@ on:
     tags:
       - 'v*'
   pull_request:
-    branches: [ "main" ] 
- 
+    branches: [ "main" ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -41,21 +41,23 @@ jobs:
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-    - name: Check if tag exists
-      id: check_tag
+    - name: Generate unique tag
+      id: generate_tag
       run: |
-        if git rev-parse "v$VERSION" >/dev/null 2>&1; then
-          echo "Tag v$VERSION already exists"
-          echo "EXISTS=true" >> $GITHUB_ENV
-        else
-          echo "EXISTS=false" >> $GITHUB_ENV
-        fi
+        BASE_VERSION=${{ steps.get_version.outputs.version }}
+        TAG="v$BASE_VERSION"
+        COUNT=0
+        while git rev-parse "$TAG" >/dev/null 2>&1; do
+          COUNT=$((COUNT + 1))
+          TAG="v$BASE_VERSION.$COUNT"
+        done
+        echo "FINAL_TAG=$TAG" >> $GITHUB_ENV
+        echo "final_tag=$TAG" >> $GITHUB_OUTPUT
 
-    - name: Create tag (if not exists)
-      if: env.EXISTS == 'false'
+    - name: Create and push unique tag
       run: |
-        git tag -a v$VERSION -m "Version $VERSION"
-        git push origin v$VERSION
+        git tag -a ${{ env.FINAL_TAG }} -m "Auto-generated tag for version ${{ env.FINAL_TAG }}"
+        git push origin ${{ env.FINAL_TAG }}
 
     - name: Install Cordova
       run: npm install -g cordova
@@ -94,7 +96,7 @@ jobs:
     - name: Upload Release APK
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: v${{ env.VERSION }}
+        tag_name: ${{ env.FINAL_TAG }}
         files: androidtimp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
