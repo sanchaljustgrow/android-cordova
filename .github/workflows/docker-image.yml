@@ -15,8 +15,10 @@ jobs:
       contents: write
 
     steps:
-    - name: Checkout code
+    - name: Checkout code (fetch all tags)
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Required to detect existing tags
 
     - name: Set up Node.js (v20.19.0 for Angular 20+)
       uses: actions/setup-node@v4
