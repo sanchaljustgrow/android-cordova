@@ -71,12 +71,33 @@ jobs:
       run: |
         cordova create androidtimp com.thinkrms.timp TIMP
 
-    - name: Copy icon to root and install cordova-res
+    - name: Install dependencies for icon generation
+      run: sudo apt-get update && sudo apt-get install -y imagemagick
+
+    - name: Download logo and generate Android icons
       run: |
-        cp android-angular/icon.png androidtimp/icon.png
+        mkdir -p androidtimp/res/android
+        curl -o androidtimp/logo.png https://timp.thingsrms.com/assets/logo.png
+
+        convert androidtimp/logo.png -resize 36x36 androidtimp/res/android/icon-36-ldpi.png
+        convert androidtimp/logo.png -resize 48x48 androidtimp/res/android/icon-48-mdpi.png
+        convert androidtimp/logo.png -resize 72x72 androidtimp/res/android/icon-72-hdpi.png
+        convert androidtimp/logo.png -resize 96x96 androidtimp/res/android/icon-96-xhdpi.png
+        convert androidtimp/logo.png -resize 144x144 androidtimp/res/android/icon-144-xxhdpi.png
+        convert androidtimp/logo.png -resize 192x192 androidtimp/res/android/icon-192-xxxhdpi.png
+
+    - name: Add icon references to config.xml
+      run: |
         cd androidtimp
-        npm install -g cordova-res
-        cordova-res android --copy
+        sed -i '/<widget/a \
+        <platform name="android">\n\
+          <icon src="res/android/icon-36-ldpi.png" density="ldpi" />\n\
+          <icon src="res/android/icon-48-mdpi.png" density="mdpi" />\n\
+          <icon src="res/android/icon-72-hdpi.png" density="hdpi" />\n\
+          <icon src="res/android/icon-96-xhdpi.png" density="xhdpi" />\n\
+          <icon src="res/android/icon-144-xxhdpi.png" density="xxhdpi" />\n\
+          <icon src="res/android/icon-192-xxxhdpi.png" density="xxxhdpi" />\n\
+        </platform>' config.xml
 
     - name: Add Android platform to Cordova
       run: |
@@ -112,3 +133,4 @@ jobs:
         files: androidtimp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
