@@ -18,7 +18,7 @@ jobs:
     - name: Checkout code (fetch all tags)
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Required to detect existing tags
+        fetch-depth: 0
 
     - name: Set up Node.js (v20.19.0 for Angular 20+)
       uses: actions/setup-node@v4
@@ -70,6 +70,16 @@ jobs:
     - name: Cordova project setup
       run: |
         cordova create androidtimp com.thinkrms.timp TIMP
+
+    - name: Copy icon to root and install cordova-res
+      run: |
+        cp android-angular/icon.png androidtimp/icon.png
+        cd androidtimp
+        npm install -g cordova-res
+        cordova-res android --copy
+
+    - name: Add Android platform to Cordova
+      run: |
         cd androidtimp
         cordova platform add android@13.0.0
 
