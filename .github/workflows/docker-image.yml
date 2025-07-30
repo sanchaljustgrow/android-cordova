@@ -78,6 +78,8 @@ jobs:
       run: |
         mkdir -p androidtimp/res/android
         curl -o androidtimp/logo.png https://timp.thingsrms.com/assets/logo.png
+        convert androidtimp/logo.png -resize 144x144 -gravity center -background white -extent 192x192 preview.png
+        xdg-open preview.png
 
         convert androidtimp/logo.png -resize 36x36 androidtimp/res/android/icon-36-ldpi.png
         convert androidtimp/logo.png -resize 48x48 androidtimp/res/android/icon-48-mdpi.png
