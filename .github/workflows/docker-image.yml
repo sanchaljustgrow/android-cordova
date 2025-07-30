@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
     permissions:
       contents: write
 
@@ -25,11 +25,19 @@ jobs:
       with:
         node-version: 20.19.0
 
-    - name: Install packages and build Angular
+    - name: Install Angular dependencies and build
       run: |
         cd android-angular
         npm install
         npm run build
+
+    - name: Run Snyk vulnerability scan
+      run: |
+        cd android-angular
+        npm install -g snyk
+        snyk test || echo "Snyk scan completed with issues"
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
     - name: Configure git identity
       run: |
@@ -78,15 +86,13 @@ jobs:
       run: |
         mkdir -p androidtimp/res/android
         curl -o androidtimp/logo.png https://timp.thingsrms.com/assets/logo.png
-        convert androidtimp/logo.png -resize 144x144 -gravity center -background white -extent 192x192 preview.png
-        xdg-open preview.png
 
         convert androidtimp/logo.png -resize 36x36 androidtimp/res/android/icon-36-ldpi.png
         convert androidtimp/logo.png -resize 48x48 androidtimp/res/android/icon-48-mdpi.png
         convert androidtimp/logo.png -resize 72x72 androidtimp/res/android/icon-72-hdpi.png
-        convert androidtimp/logo.png -resize 72x72 androidtimp/res/android/icon-96-xhdpi.png
-        convert androidtimp/logo.png -resize 72x72 androidtimp/res/android/icon-144-xxhdpi.png
-        convert androidtimp/logo.png -resize 72x72 androidtimp/res/android/icon-192-xxxhdpi.png
+        convert androidtimp/logo.png -resize 96x96 androidtimp/res/android/icon-96-xhdpi.png
+        convert androidtimp/logo.png -resize 144x144 androidtimp/res/android/icon-144-xxhdpi.png
+        convert androidtimp/logo.png -resize 192x192 androidtimp/res/android/icon-192-xxxhdpi.png
 
     - name: Add icon references to config.xml
       run: |
@@ -128,6 +134,42 @@ jobs:
         cd androidtimp
         cordova build android
 
+    - name: Start MobSF in Docker
+      run: |
+        docker run -d -p 8000:8000 --name mobsf opensecurity/mobile-security-framework-mobsf
+
+    - name: Wait for MobSF to initialize
+      run: sleep 30
+
+    - name: Scan APK with MobSF
+      run: |
+        APK_PATH="androidtimp/platforms/android/app/build/outputs/apk/debug/app-debug.apk"
+        API_KEY="mobsf_api_key"
+
+        # Upload APK
+        UPLOAD=$(curl -s -X POST http://localhost:8000/api/v1/upload \
+          -H "Authorization: $API_KEY" \
+          -F "file=@$APK_PATH")
+        HASH=$(echo "$UPLOAD" | jq -r '.hash')
+
+        # Trigger scan
+        curl -s -X POST http://localhost:8000/api/v1/scan \
+          -H "Authorization: $API_KEY" \
+          -H "Content-Type: application/json" \
+          -d "{\"hash\":\"$HASH\"}"
+
+        # Download report
+        curl -o mobsf-report.json -s -X POST http://localhost:8000/api/v1/report_json \
+          -H "Authorization: $API_KEY" \
+          -H "Content-Type: application/json" \
+          -d "{\"hash\":\"$HASH\"}"
+
+    - name: Upload MobSF Report as Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: mobsf-security-report
+        path: mobsf-report.json
+
     - name: Upload Release APK
       uses: softprops/action-gh-release@v1
       with:
@@ -135,4 +177,3 @@ jobs:
         files: androidtimp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
