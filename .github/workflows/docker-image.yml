@@ -84,7 +84,7 @@ jobs:
     - name: Copy local logo and generate Android icons
       run: |
         mkdir -p androidtimp/res/android
-        cp ThingsRMSappIcon.png androidtimp/logo.png
+        cp ThingsRMSlogo.png androidtimp/logo.png
     
         convert androidtimp/logo.png -resize 36x36 androidtimp/res/android/icon-36-ldpi.png
         convert androidtimp/logo.png -resize 48x48 androidtimp/res/android/icon-48-mdpi.png
