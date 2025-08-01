@@ -81,18 +81,18 @@ jobs:
 
     - name: Install dependencies for icon generation
       run: sudo apt-get update && sudo apt-get install -y imagemagick
-
-    - name: Download logo and generate Android icons
+    - name: Copy local logo and generate Android icons
       run: |
         mkdir -p androidtimp/res/android
-        curl -o androidtimp/logo.png https://timp.thingsrms.com/assets/logo.png
-
+        cp ThingsRMSappIcon.png androidtimp/logo.png
+    
         convert androidtimp/logo.png -resize 36x36 androidtimp/res/android/icon-36-ldpi.png
         convert androidtimp/logo.png -resize 48x48 androidtimp/res/android/icon-48-mdpi.png
         convert androidtimp/logo.png -resize 72x72 androidtimp/res/android/icon-72-hdpi.png
         convert androidtimp/logo.png -resize 96x96 androidtimp/res/android/icon-96-xhdpi.png
         convert androidtimp/logo.png -resize 144x144 androidtimp/res/android/icon-144-xxhdpi.png
         convert androidtimp/logo.png -resize 192x192 androidtimp/res/android/icon-192-xxxhdpi.png
+
 
     - name: Add icon references to config.xml
       run: |
